@@ -10,15 +10,17 @@ var _ unsafe.Pointer
 var (
 	modwinspool = syscall.NewLazyDLL("winspool.drv")
 
-	procGetDefaultPrinterW = modwinspool.NewProc("GetDefaultPrinterW")
-	procClosePrinter       = modwinspool.NewProc("ClosePrinter")
-	procOpenPrinterW       = modwinspool.NewProc("OpenPrinterW")
-	procStartDocPrinterW   = modwinspool.NewProc("StartDocPrinterW")
-	procEndDocPrinter      = modwinspool.NewProc("EndDocPrinter")
-	procWritePrinter       = modwinspool.NewProc("WritePrinter")
-	procStartPagePrinter   = modwinspool.NewProc("StartPagePrinter")
-	procEndPagePrinter     = modwinspool.NewProc("EndPagePrinter")
-	procEnumPrintersW      = modwinspool.NewProc("EnumPrintersW")
+	procGetDefaultPrinterW  = modwinspool.NewProc("GetDefaultPrinterW")
+	procClosePrinter        = modwinspool.NewProc("ClosePrinter")
+	procOpenPrinterW        = modwinspool.NewProc("OpenPrinterW")
+	procStartDocPrinterW    = modwinspool.NewProc("StartDocPrinterW")
+	procEndDocPrinter       = modwinspool.NewProc("EndDocPrinter")
+	procWritePrinter        = modwinspool.NewProc("WritePrinter")
+	procStartPagePrinter    = modwinspool.NewProc("StartPagePrinter")
+	procEndPagePrinter      = modwinspool.NewProc("EndPagePrinter")
+	procEnumPrintersW       = modwinspool.NewProc("EnumPrintersW")
+	procDeviceCapabilitiesW = modwinspool.NewProc("DeviceCapabilitiesW")
+	procDocumentPropertiesW = modwinspool.NewProc("DocumentPropertiesW")
 )
 
 func GetDefaultPrinter(buf *uint16, bufN *uint32) (err error) {
@@ -120,6 +122,32 @@ func EndPagePrinter(h syscall.Handle) (err error) {
 func EnumPrinters(flags uint32, name *uint16, level uint32, buf *byte, bufN uint32, needed *uint32, returned *uint32) (err error) {
 	r1, _, e1 := syscall.Syscall9(procEnumPrintersW.Addr(), 7, uintptr(flags), uintptr(unsafe.Pointer(name)), uintptr(level), uintptr(unsafe.Pointer(buf)), uintptr(bufN), uintptr(unsafe.Pointer(needed)), uintptr(unsafe.Pointer(returned)), 0, 0)
 	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func DeviceCapabilities(pDevice *uint16, pPort *uint16, fwCapability uint16, pOutput *uint16, pDevMode *uint16) (length uint32, err error) {
+	r0, _, e1 := syscall.Syscall6(procDeviceCapabilitiesW.Addr(), 5, uintptr(unsafe.Pointer(pDevice)), uintptr(unsafe.Pointer(pPort)), uintptr(fwCapability), uintptr(unsafe.Pointer(pOutput)), uintptr(unsafe.Pointer(pDevMode)), 0)
+	length = uint32(r0)
+	if length == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func DocumentProperties(hWnd uint32, h syscall.Handle, name *uint16, bufOut *byte, bufIn *byte, mode uint32) (length int32, err error) {
+	r0, _, e1 := syscall.Syscall6(procDocumentPropertiesW.Addr(), 6, uintptr(hWnd), uintptr(h), uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(bufOut)), uintptr(unsafe.Pointer(bufIn)), uintptr(mode))
+	length = int32(r0)
+	if length == 0 {
 		if e1 != 0 {
 			err = error(e1)
 		} else {

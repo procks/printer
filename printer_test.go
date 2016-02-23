@@ -5,7 +5,7 @@
 package printer
 
 import (
-	"fmt"
+	//"fmt"
 	"testing"
 )
 
@@ -42,10 +42,35 @@ func TestReadNames(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadNames failed: %v", err)
 	}
+	t.Logf("ReadNames: %#v", names)
 	name, err := Default()
 	if err != nil {
 		t.Fatalf("Default failed: %v", err)
 	}
+	//name = "Fax";
+	//name = "PDFCreator";
+	name = "Microsoft XPS Document Writer";
+	t.Log(name);
+	port, err := GetPrinterPort(name)
+	res, err := GetAllMediaNames(name, port);
+	t.Logf("GetAllMediaNames: %#v", res)
+	sizes, err := GetAllMediaSizes(name, port);
+	t.Logf("GetAllMediaSizes: %#v", sizes)
+	iDs, err := GetAllMediaIDs(name, port);
+	t.Logf("GetAllMediaIDs: %#v", iDs)
+
+	resol, err := GetAllResolutions(name, port);
+	if err != nil {
+		t.Fatalf("getAllResolutions failed: %v", err)
+	}
+	t.Logf("GetAllResolutions: %v", resol);
+
+	settings, err := GetDefaultSettings(name, port);
+	if err != nil {
+		t.Fatalf("getDefaultSettings failed: %v", err)
+	}
+	t.Logf("GetDefaultSettings: %#v", settings)
+
 	// make sure default printer is listed
 	for _, v := range names {
 		if v == name {
